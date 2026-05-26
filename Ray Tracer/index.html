@@ -1,0 +1,276 @@
+<!-- Content created using code provided from Dr. Ricks, in class code, and math from Ray Tracing In One Weekend-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ray Tracer</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        // Vector 3 class
+        class Vector3 {
+            constructor(x, y, z) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+            }
+
+            // Clamps the x, y, and z of the value within the specified range
+            clamp(min, max) {
+                const clampedX = Math.min(Math.max(this.x, min), max);
+                const clampedY = Math.min(Math.max(this.y, min), max);
+                const clampedZ = Math.min(Math.max(this.z, min), max);
+                return new Vector3(clampedX, clampedY, clampedZ);
+            }
+
+            // Add a vector 3 object to the current vector 3
+            add(v) {
+                return new Vector3(this.x + v.x, this.y + v.y, this.z + v.z);
+            }
+
+            // Subtract a vector 3 object from the current vector 3
+            sub(v) {
+                return new Vector3(this.x - v.x, this.y - v.y, this.z - v.z);
+            }
+
+            // Multiply the vector 3 object by a scalar
+            multiply(s) {
+                return new Vector3(this.x * s, this.y * s, this.z * s);
+            }
+
+            // Get the dot product of 2 vector 3 objects
+            dot(v) {
+                return this.x * v.x + this.y * v.y + this.z * v.z;
+            }
+
+            // Get the cross product of 2 vector 3 objects
+            cross(v) {
+                return new Vector3(
+                    this.y * v.z - this.z * v.y,
+                    this.z * v.x - this.x * v.z,
+                    this.x * v.y - this.y * v.x
+                );
+            }
+
+            // Get the length of the vector 3 object
+            length() {
+                return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+            }
+
+            // Normalize the vector 3 object
+            normalize() {
+                const len = this.length();
+                return new Vector3(this.x / len, this.y / len, this.z / len);
+            }
+        }
+
+        // Ray class
+        class Ray {
+            constructor(origin, direction) {
+                this.origin = origin;
+                this.direction = direction.normalize();
+            }
+
+            // Calculate a a point on the ray
+            pointAtParameter(t) {
+                return this.origin.add(this.direction.multiply(t));
+            }
+        }
+
+        // Sphere class
+        class Sphere {
+            constructor(center, radius) {
+                this.center = center;
+                this.radius = radius;
+            }
+
+            // Check for an intersection between the sphere and a ray
+            intersect(ray) {
+                const oc = ray.origin.sub(this.center);
+                const a = ray.direction.dot(ray.direction);
+                const b = 2.0 * oc.dot(ray.direction);
+                const c = oc.dot(oc) - this.radius * this.radius;
+                const discriminant = b * b - 4 * a * c;
+
+                if (discriminant < 0) {
+                    // No intersection, return -1
+                    return -1;
+                } else {
+                    // Intersection
+                    return (-b - Math.sqrt(discriminant)) / (2.0 * a);
+                }
+            }
+        }
+
+        // Light source position
+        const lightPosition = new Vector3(0, 2.5, 6);
+
+        function main() {
+            // Setup scene
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d");
+            const width = canvas.width = window.innerWidth;
+            const height = canvas.height = window.innerHeight;
+            const aspectRatio = width / height;
+            const fov = 90 * Math.PI / 180;
+            const origin = new Vector3(0, 1, 10);
+
+            // Declare Speheres
+            const spheres = [
+                new Sphere(new Vector3(0, -10004, -20), 10000), // Large floor sphere
+                new Sphere(new Vector3(1.5, 0, 5), 1), // Large black sphere (reflective)
+                new Sphere(new Vector3(-2, 0, -2), 1), // Green sphere
+                new Sphere(new Vector3(-.5, 0, 6), 0.5), // Blue sphere
+                new Sphere(new Vector3(1, 0, 8.5), 0.25), // Yellow sphere
+                new Sphere(new Vector3(8, 0, 2), 1), // Purple sphere
+                new Sphere(new Vector3(-9, 0, 0), 1), // Cyan sphere
+                new Sphere(new Vector3(1.5, 1.7, 5), 0.75), // Orange sphere (on top of reflective)
+            ];
+
+            // Add sphere colors
+            spheres.forEach((sphere, index) => {
+                const colors = [
+                    new Vector3(0.5, 0.5, 0.5), // Floor sphere
+                    new Vector3(0, 0.0, 0.0), // Red
+                    new Vector3(0.0, 1.0, 0.0), // Green
+                    new Vector3(0.0, 0.0, 1.0), // Blue
+                    new Vector3(1.0, 1.0, 0.0), // Yellow
+                    new Vector3(0.5, 0.0, 0.5), // Purple
+                    new Vector3(0.0, 1.0, 1.0), // Cyan
+                    new Vector3(1.0, 0.5, 0.0) // Orange
+                ];
+                sphere.color = colors[index];
+                // Set the sphere at index 1 to be reflective
+                sphere.reflection = index === 1 ? 1.0 : 0.0;
+            });
+
+            // Cast rays and render scene
+            for (let j = height - 1; j >= 0; --j) {
+                for (let i = 0; i < width; ++i) {
+                    const u = i / width;
+                    const v = j / height;
+
+                    const x = (2 * u - 1) * Math.tan(fov / 2) * aspectRatio;
+                    const y = (1 - 2 * v) * Math.tan(fov / 2);
+                    const direction = new Vector3(x, y, -1).normalize();
+
+                    const ray = new Ray(origin, direction);
+
+                    let closestT = Infinity;
+                    let closestSphere = null;
+
+                    for (const sphere of spheres) {
+                        const t = sphere.intersect(ray);
+                        if (t > 0 && t < closestT) {
+                            closestT = t;
+                            closestSphere = sphere;
+                        }
+                    }
+
+                    if (closestSphere) {
+                        let color;
+                        if (closestSphere === spheres[0]) {
+                            color = closestSphere.color;
+                        } else {
+                            const intersectionPoint = ray.pointAtParameter(closestT);
+                            const normal = intersectionPoint.sub(closestSphere.center).normalize();
+
+                            const ambientColor = closestSphere.color.multiply(0.2);
+                            const lightDirection = lightPosition.sub(intersectionPoint).normalize();
+                            const diffuseIntensity = Math.max(0, normal.dot(lightDirection));
+                            const diffuseColor = closestSphere.color.multiply(diffuseIntensity);
+
+                            const viewDirection = ray.direction.multiply(-1).normalize();
+                            const reflectionDirection = normal.multiply(2 * normal.dot(lightDirection)).sub(lightDirection).normalize();
+                            const specularIntensity = Math.pow(Math.max(0, reflectionDirection.dot(viewDirection)), 50);
+                            const specularColor = new Vector3(1, 1, 1).multiply(specularIntensity);
+
+                            if (closestSphere.reflection > 0) {
+                                const reflectedDirection = ray.direction.sub(normal.multiply(2 * ray.direction.dot(normal))).normalize();
+                                const reflectedRay = new Ray(intersectionPoint, reflectedDirection);
+                                const reflectionColor = trace(reflectedRay, spheres, 0).multiply(closestSphere.reflection);
+                                color = ambientColor.add(diffuseColor).add(specularColor).add(reflectionColor);
+                            } else {
+                                color = ambientColor.add(diffuseColor).add(specularColor);
+                            }
+                        }
+                        // Make sure the colors are within bounds
+                        color = color.clamp(0, 1).multiply(255);
+                        // Fill pixel color
+                        ctx.fillStyle = `rgb(${color.x},${color.y},${color.z})`;
+                    } else {
+                        // Fill with sky color
+                        ctx.fillStyle = "skyblue";
+                    }
+                    // Draw the pixel
+                    ctx.fillRect(i, j, 1, 1);
+                }
+            }
+        }
+
+        // Trace function
+        function trace(ray, spheres, depth) {
+            if (depth > 5) return new Vector3(0, 0, 0);
+
+            let closestT = Infinity;
+            let closestSphere = null;
+
+            // Find closest intersection
+            for (const sphere of spheres) {
+                const t = sphere.intersect(ray);
+                if (t > 0 && t < closestT) {
+                    closestT = t;
+                    closestSphere = sphere;
+                }
+            }
+
+            // Shader magic
+            if (closestSphere) {
+                const intersectionPoint = ray.pointAtParameter(closestT);
+                const normal = intersectionPoint.sub(closestSphere.center).normalize();
+
+                const ambientColor = closestSphere.color.multiply(0.2);
+                const lightDirection = lightPosition.sub(intersectionPoint).normalize();
+                const diffuseIntensity = Math.max(0, normal.dot(lightDirection));
+                const diffuseColor = closestSphere.color.multiply(diffuseIntensity);
+
+                const viewDirection = ray.direction.multiply(-1).normalize();
+                const reflectionDirection = normal.multiply(2 * normal.dot(lightDirection)).sub(lightDirection).normalize();
+                const specularIntensity = Math.pow(Math.max(0, reflectionDirection.dot(viewDirection)), 50);
+                const specularColor = new Vector3(1, 1, 1).multiply(specularIntensity);
+
+                if (closestSphere.reflection > 0) {
+                    const reflectedDirection = ray.direction.sub(normal.multiply(2 * ray.direction.dot(normal))).normalize();
+                    const reflectedRay = new Ray(intersectionPoint, reflectedDirection);
+                    const reflectionColor = trace(reflectedRay, spheres, depth + 1).multiply(closestSphere.reflection);
+                    return ambientColor.add(diffuseColor).add(specularColor).add(reflectionColor);
+                } else {
+                    return ambientColor.add(diffuseColor).add(specularColor);
+                }
+            } else {
+                // Return sky color
+                return new Vector3(0.5, 0.7, 1.0);
+            }
+        }
+
+        // Call main
+        main();
+    </script>
+</body>
+</html>

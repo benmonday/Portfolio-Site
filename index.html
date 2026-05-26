@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ben Monday - Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <canvas id="stars"></canvas>
+
+  <nav>
+    <a href="index.html" class="nav-logo">benmonday.dev</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="projects.html">Projects</a></li>
+      <!-- <li><a href="artwork.html">Artwork</a></li> -->
+      <li><a href="about.html">About Me</a></li>
+      <li><a href="contact.html">Contact Me</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="container">
+      <section class="hero">
+        <h2>Home</h2>
+        <h1>
+          Welcome!
+        </h1>
+        <br>
+        <p class="hero-desc">
+          Welcome to my portfolio website! I'm Ben Monday, a software developer, game developer, and artist. <br> <br>
+          This site is meant to act as an archive of all the projects I have worked on and released. You can find
+          some of my school projects, my personal project work, and some info about me!
+        </p>
+        <div class="hero-cta">
+          <a class="btn" href="projects.html">View Projects</a>
+          <!-- <a class="btn" href="artwork.html">View Artwork</a> -->
+          <a class="btn" href="about.html">About Me</a>
+          <a class="btn" href="contact.html">Contact Me</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="stars.js"></script>
+  <script>
+    const page = window.location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.nav-links a').forEach(a => {
+      if (a.getAttribute('href') === page) a.classList.add('active');
+    });
+  </script>
+
+</body>
+</html>

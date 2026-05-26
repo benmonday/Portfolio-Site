@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>OBJ Render</title>
+  <style>
+    * {
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body style="background-color: gray;">
+  <canvas id="canv">
+
+  </canvas>
+  <!-- Class source files -->
+  <script src="classes/Vertex2.js"></script>
+  <script src="classes/Vertex3.js"></script>
+  <script src="classes/Pixel.js"></script>
+  <script src="classes/Edge.js"></script>
+  <script src="classes/Triangle.js"></script>
+
+  <!-- Models-->
+  <!-- <script src="objs/cube.js"></script> -->
+  <!-- <script src="objs/sphere.js"></script> -->
+  <script src="objs/monkey.js"></script>
+
+
+  <script>
+    //Get a reference to the canvas we will draw to
+    let canvas = document.querySelector("#canv");
+
+    let bufferSize = 800;
+    let scaleFactor = bufferSize/4;
+    canvas.width = bufferSize;
+    canvas.height = bufferSize
+    let ctx = canvas.getContext("2d")
+    ctx.fillStyle = "black"
+    ctx.fillRect(0, 0, bufferSize, bufferSize)
+
+    //Start parsing the obj file
+    let lines = obj.split("\n")
+    let vs = []
+    let vns = []
+    let vts = []
+    let triangles = []
+
+    for (let i = 0; i < lines.length; i++) {
+      let split = lines[i].trim().split(" ")
+      if (split[0] == "v") { //Handle vertex information
+        let x = +split[1]
+        let y = +split[2]
+        let z = +split[3]
+
+        //We are scaling and shifting so our model is in the middle of the canvas
+        let v = new Vertex3(x * scaleFactor + bufferSize/2, y * scaleFactor + bufferSize/2, z * scaleFactor)
+        vs.push(v)
+      }
+      if (split[0] == "vn") {//Handle normal information
+        let x = +split[1]
+        let y = +split[2]
+        let z = +split[3]
+        let vn = new Vertex3(x, y, z)
+        vns.push(vn)
+      }
+      if (split[0] == "vt") {//Handle UV (texture) coordinate information
+        let u = +split[1]
+        let v = +split[2]
+        let vt = new Vertex2(u, v)
+        vts.push(vt)
+      }
+      if (split[0] == "f") {//Handle information about each triangle
+        let one = split[1]
+        let two = split[2]
+        let three = split[3]
+        let groups = [one, two, three]
+        let points = []
+        for (let i = 0; i < 3; i++) {
+          let group = groups[i].split("/")
+          let vIndex = +group[0] - 1
+          let vnIndex = +group[1] - 1
+          let vtIndex = +group[2] - 1
+
+          let v = vs[vIndex]
+          let vn = vns[vnIndex]
+          let vt = vts[vtIndex]
+
+          points.push(v)
+        }
+
+        let triangle = new Triangle(points[0], points[1], points[2])
+        triangles.push(triangle)
+      }
+    }
+    //End obj parsing
+
+
+    let zBuffer = []
+
+    let bufferWidth = bufferSize
+    let bufferHeight = bufferSize
+
+    function rotate(x, y, angle) {
+      let _x = x - bufferSize/2
+      let _y = y;
+      let _r = Math.sqrt(_x ** 2 + _y ** 2)
+      let _tan = Math.atan2(_y, _x);
+      let _angle = _tan + angle;
+      let _x2 = Math.cos(_angle) * _r;
+      let _y2 = Math.sin(_angle) * _r;
+      return { x: _x2 + bufferSize/2, y: _y2 }
+    }
+
+
+    let useAnimation = true;
+
+    /**
+     * Render the obj to the screen
+     */
+    function render() {
+
+      let usePerspective = true;
+      let useBackFaceCulling = true;
+      let useOneTriangle = false;
+
+      //First clear the zBuffer
+      zBuffer = [];
+      for (let x = 0; x < bufferWidth; x++) {
+        let col = []
+        for (let y = 0; y < bufferHeight; y++) {
+          col.push(new Pixel(x, y, 0, 0, 0, 1000))
+        }
+        zBuffer.push(col)
+      }
+
+      //Loop over all the triangles
+      //And draw them to the screen
+      for (let index = 0; index < triangles.length; index++) {
+
+        //Just show one triangle for debugging
+        if (useOneTriangle)
+          if (index != 1) continue;
+
+        //Get clones of the current triangle vertices
+        //so that we don't alter the original geometry
+        let one = triangles[index].vertexOne.getClone()
+        let two = triangles[index].vertexTwo.getClone()
+        let three = triangles[index].vertexThree.getClone()
+
+        //Update the rotation if we are doing a simple animation
+        if (useAnimation) {
+          let angle = tick / 10
+
+          let out = rotate(one.x, one.z, angle);
+          one.x = out.x;
+          one.z = out.y;
+
+          out = rotate(two.x, two.z, angle);
+          two.x = out.x;
+          two.z = out.y;
+
+          out = rotate(three.x, three.z, angle)
+          three.x = out.x;
+          three.z = out.y;
+        }
+
+
+        //Setup the camera information for perspective calculations
+        let cameraFromZ = bufferSize/2 + bufferSize/8 +5
+        let cameraToZ = bufferSize/8+5
+        let cameraLengthZ = cameraFromZ - cameraToZ
+
+        //Track the points once we do perspective
+        let points = [one, two, three];
+
+        //Loop over the points and apply perspective
+        if (usePerspective) {
+          for (const point of points) {
+            let distanceZ = cameraFromZ - point.z
+            let offsetX = point.x - bufferSize / 2;
+            let ratioX = offsetX / distanceZ;
+            let newValueX = ratioX * cameraLengthZ;
+            point.x = newValueX + bufferSize / 2;
+
+            let offsetY = point.y - bufferSize / 2;
+            let ratioY = offsetY / distanceZ;
+            let newValueY = ratioY * cameraLengthZ;
+            // Invert Y
+            point.y = bufferSize - (newValueY + bufferSize / 2);
+          }
+        }
+
+
+        let twoOne = two.getSubtract(one);
+        let threeOne = three.getSubtract(one);
+        let cross = twoOne.getCross(threeOne).getNormalized();
+        let normal = cross.getNormalized();
+        if (useBackFaceCulling) {
+          if (normal.z < 0)
+            continue;
+        }
+
+        //Draw the triangle onto the zBuffer
+        let a = new Vertex2(one.x, one.y);
+        let b = new Vertex2(two.x, two.y);
+        let c = new Vertex2(three.x, three.y);
+
+        let e1 = new Edge(a, b);
+        let e2 = new Edge(b, c);
+        let e3 = new Edge(c, a);
+
+        let pixels1 = e1.getPixels();
+        let pixels2 = e2.getPixels();
+        let pixels3 = e3.getPixels();
+
+        let allEdgePixels = [...pixels1, ...pixels2, ...pixels3]
+        let minY = Math.min(...allEdgePixels.map(p => p.y));
+        let maxY = Math.max(...allEdgePixels.map(p => p.y));
+
+        for (let pixel of allEdgePixels) {
+          let x = Math.max(0, pixel.x);
+          let y = Math.max(0, pixel.y);
+          zBuffer[x][y] = pixel
+        }
+      }
+
+      // Draw the buffer
+
+      for (let x = 0; x < bufferWidth; x++) {
+        for (let y = 0; y < bufferHeight; y++) {
+          let pixel = zBuffer[x][y]
+          ctx.fillStyle = `rgb(${pixel.r},${pixel.g},${pixel.b})`;
+          ctx.fillRect(pixel.x, pixel.y, 1, 1)
+        }
+      }
+
+      //Increment the tick for animation purposes
+      tick++;
+    }
+
+    //Keep track of how many frames we have seen so that we can 
+    //do simple animation if we want.
+
+
+    let tick = 0;
+
+    if (useAnimation) {
+      setInterval(render, 100)
+    }
+    else {
+      render()
+    }
+
+  </script>
+</body>
+
+</html>
