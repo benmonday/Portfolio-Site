@@ -23,14 +23,5 @@
       <li><a href="contact.html">Contact Me</a></li>
     </ul>
   </nav>
-
-  <script src="stars.js"></script>
-  <script>
-    const page = window.location.pathname.split('/').pop() || 'index.html';
-    document.querySelectorAll('.nav-links a').forEach(a => {
-      if (a.getAttribute('href') === page) a.classList.add('active');
-    });
-  </script>
-
 </body>
 </html>
