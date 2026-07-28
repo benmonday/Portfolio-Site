@@ -1,11 +1,11 @@
 const CATEGORIES = {
   category0: { label: 'Spongebob Characters', words: ['Spongebob', 'Patrick', 'Gary', 'Larry', 'Plankton', 'Patchy', 'Sandy', 'Mystery', 'Karen', 'Mr. Krabs'], color: '#8b5cf6' },
   category1: { label: 'Friend Slop Games', words: ['Peak', 'Lethal Company', 'Meccha Chameleon', 'Among Us', 'Goblin Cleanup', 'Repo', 'Content Warning', 'Plate Up', 'Terraria', 'Human Fall Flat'], color: '#22c55e' },
-  category2: { label: 'Fictional Scientists', words: ['Ryland Grace', 'Doc Brown', 'Rick Sanchez', 'Walter White', 'Frankenstein', 'Dana Scully', 'Sheldon Cooper', 'Hubert Farnsworth', 'Heinz Doofenshmirtz', 'Gordon Freeman'], color: '#3b82f6' },
+  category2: { label: 'Fictional Scientists', words: ['Ryland Grace', 'Doc Brown', 'Rick Sanchez', 'Walter White', 'Victor Frankenstein', 'Dana Scully', 'Sheldon Cooper', 'Hubert Farnsworth', 'Heinz Doofenshmirtz', 'Gordon Freeman'], color: '#3b82f6' },
   category3: { label: 'Evil Software', words: ['Quickbooks', 'Sage', 'Bluebeam', 'Zee Drive', 'Citrix', 'Printix', 'Sharepoint', 'Yardi One', 'Adobe Acrobat', 'Ring Central'], color: '#f97316' },
   category4: { label: 'World Leader\'s First Names', words: ['Benjamin', 'Donald', 'Narendra', 'Kim', 'Emmanuel', 'Vladimir', 'Xi', 'Volodymyr', 'Andy', 'Mark'], color: '#ef4444' },
   category5: { label: 'Animals', words: ['Penguin', 'Cat', 'Dog', 'Bear', 'Frog', 'Chicken', 'Cow', 'Sheep', 'Pig', 'Monkey'], color: '#84cc16' },
-  category6: { label: 'Fast Food', words: ['Taco Bell', 'Raising Canes', 'McDonalds', 'Chick-Fil-A', 'Burger King', 'Wingstop', 'Domino\'s', 'Sonic', 'Arby\'s', 'Popeyes'], color: '#06b6d4' },
+  category6: { label: 'Fast Food', words: ['Taco Bell', 'Raising Canes', 'McDonalds', 'Chick-Fil-A', 'Burger King', 'Wingstop', 'Domino\'s', 'Culver\'s', 'Arby\'s', 'Popeyes'], color: '#06b6d4' },
   category7: { label: 'The Ankh Shield', words: ['Bezoar', 'Trifold Map', 'Blindfold', 'Vitamins', 'Armor Polish', 'Megaphone', 'Fast Clock', 'Nazar', 'Pocket Mirror', 'Cobalt Shield'], color: '#eab308' },
   category8: { label: 'Creepypastas O_O', words: ['Jeff the Killer', 'Ben Drowned', 'Smile Dog', 'Slenderman', 'Sonic.exe', 'Squidward Suicide', 'Momo', 'Russian Sleep Expiriment', 'The Rake', 'Herobrine'], color: '#ec4899' },
   category9: { label: 'Ben Monday', words: ['5\'3\"', 'The Joker', 'Homeschooled', 'Never Seen Spongebob', 'Just a Little Guy', 'The Kid Named Finger', 'Humble Shrimp Farmer', 'Femcel Larper', 'Netanyahu', 'Nerd Emoji'], color: '#14b8a6' },
@@ -28,10 +28,10 @@ const autoSolveBtn = document.getElementById('auto-solve-btn');
 const fireworksCanvas = document.getElementById('fireworks-canvas');
 const fireworksCtx = fireworksCanvas.getContext('2d');
 
-const OVERLAP_THRESHOLD = 0.3; // fraction of the SMALLER box's area that must overlap to trigger a merge attempt
-const CLICK_MOVE_THRESHOLD = 6; // px of movement below which a pointerdown/up counts as a click, not a drag
-const TOOLTIP_DELAY = 500; // ms of hovering before the full word list tooltip appears
-const TRUNCATE_AT = 2; // boxes with more words than this show "Word1 + Word2 + [n]" instead of the full list
+const OVERLAP_THRESHOLD = 0.3; // Hitbox % value
+const CLICK_MOVE_THRESHOLD = 6; // Threshold for click vs drag behavior
+const TOOLTIP_DELAY = 500; // Value for how long a box needs to be hovered for the extended info to appear
+const TRUNCATE_AT = 2; // Shorten box descriptions after this many words
 
 let boxes = [];
 let misses = 0;
@@ -342,8 +342,7 @@ function snapBack(box, x, y) {
 
 function pulseMiss(el) {
   el.classList.remove('miss-shake');
-  // eslint-disable-next-line no-unused-expressions
-  el.offsetWidth; // restart animation if it's already mid-pulse
+  el.offsetWidth;
   el.classList.add('miss-shake');
   setTimeout(() => el.classList.remove('miss-shake'), 500);
 }
@@ -410,7 +409,7 @@ function stopTimer() {
   }
 }
 
-// --- Fireworks (plays in the workspace background once every category is solved) ---
+// Firework code courtesy of Claude
 
 const FIREWORK_COLORS = ['#f87171', '#fb923c', '#fbbf24', '#a3e635', '#4ade80', '#2dd4bf', '#38bdf8', '#818cf8', '#c084fc', '#f472b6'];
 
@@ -494,7 +493,7 @@ function stopFireworks() {
   fireworksCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
 }
 
-// --- Testing helper: instantly solve every category ---
+// Auto solving for testing purposes.
 
 function autoSolveAll() {
   clearSelection();
