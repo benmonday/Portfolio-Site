@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Categoricle</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="title-block">
+      <h1>Categoricle</h1>
+      <p1>Drag or click to combine words into groups, create 10 categories of 10 words each!</p1>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-label">Categories Solved</span>
+        <span class="stat-value" id="solved">0 / 10</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Mistakes</span>
+        <span class="stat-value" id="misses">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Time</span>
+        <span class="stat-value" id="timer">00:00</span>
+      </div>
+      <!-- <button id="auto-solve-btn" title="Testing: instantly solve every category">Auto Solve (Test)</button> -->
+      <button id="reset-btn">Reset</button>
+    </div>
+  </header>
+
+  <main id="workspace" class="workspace">
+    <canvas id="fireworks-canvas" class="fireworks-canvas"></canvas>
+  </main>
+
+  <div id="win-message" class="win-overlay hidden">
+    <div class="win-card">
+      <button id="win-close-btn" class="win-close" title="Close and keep playing" aria-label="Close">&times;</button>
+      <h2>Puzzle Solved!</h2>
+      <p id="win-stats"></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
